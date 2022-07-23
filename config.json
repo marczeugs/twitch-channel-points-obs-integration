@@ -1,0 +1,17 @@
+{
+    "twitch_token": "",
+    "twitch_channel": "",
+    "obs_websocket_ip": "",
+    "obs_websocket_port": 4444,
+    "obs_websocket_password": "",
+    "redemption_mapping": [
+        {
+            "name": "name",
+            "action": {
+                "type": "toggle_filter_visibility",
+                "source": "source",
+                "filter": "filter"
+            }
+        }
+    ]
+}
