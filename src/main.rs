@@ -52,7 +52,10 @@ async fn main() -> anyhow::Result<()> {
         twitch_oauth2::UserToken::from_existing(&twitch_client, access_token, None, None).await?
     };
 
-    let twitch_channel_id = twitch_client.get_user_from_login(config.twitch_channel.to_string(), &twitch_user_token).await?.with_context(|| format!("Could not find user '{}'.", config.twitch_channel))?.id;
+    let twitch_channel_id = twitch_client.get_user_from_login(config.twitch_channel.to_string(), &twitch_user_token)
+        .await?
+        .with_context(|| format!("Could not find user '{}'.", config.twitch_channel))?
+        .id;
 
     let redemptions_listen_command = twitch_api2::pubsub::listen_command(
         &[twitch_api2::pubsub::channel_points::ChannelPointsChannelV1 { channel_id: twitch_channel_id.as_str().parse::<u32>().unwrap() }.into_topic()],
@@ -76,7 +79,10 @@ async fn main() -> anyhow::Result<()> {
 
             {
                 let mut ping_connection = pubsub_ping_connection.lock().await;
-                (*ping_connection).send(serde_json::to_string(&TwitchPubSubRequest { r#type: "PING".into() }).unwrap().into()).await.expect("Twitch PubSub ping failed.");
+
+                ping_connection.send(serde_json::to_string(&TwitchPubSubRequest { r#type: "PING".into() }).unwrap().into())
+                    .await
+                    .expect("Twitch PubSub ping failed.");
             }
 
             tokio::time::sleep(Duration::from_secs(60)).await;
@@ -91,7 +97,13 @@ async fn main() -> anyhow::Result<()> {
                 twitch_api2::pubsub::channel_points::ChannelPointsChannelV1Reply::RewardRedeemed { redemption, timestamp } => {
                     let matching_mapping = config.redemption_mapping.iter().find(|mapping| mapping.name == redemption.reward.title);
 
-                    println!("User '{}' redeemed reward '{}' at {}, mapped in config: {}", redemption.user.login.as_str(), redemption.reward.title, timestamp, matching_mapping.is_some());
+                    println!(
+                        "User '{}' redeemed reward '{}' at {}, mapped in config: {}",
+                        redemption.user.login.as_str(),
+                        redemption.reward.title,
+                        timestamp,
+                        matching_mapping.is_some()
+                    );
 
                     if let Some(matching_mapping) = matching_mapping {
                         match &matching_mapping.action {
@@ -114,7 +126,12 @@ async fn main() -> anyhow::Result<()> {
                                     }
                                 ).await?;
 
-                                println!("Changed visibility of filter '{}' of source '{}' to '{}'.", matching_source.name, matching_filter.name, !matching_filter.enabled);
+                                println!(
+                                    "Changed visibility of filter '{}' of source '{}' to '{}'.",
+                                    matching_source.name,
+                                    matching_filter.name,
+                                    !matching_filter.enabled
+                                );
                             }
                         }
                     }
