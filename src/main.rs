@@ -2,10 +2,8 @@ use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 use anyhow::Context;
-use obws::Client;
 use twitch_api2::twitch_oauth2;
 use futures_util::{SinkExt, StreamExt};
-use tokio::sync::Mutex;
 use twitch_api2::pubsub::Topic;
 
 #[derive(serde::Deserialize)]
@@ -43,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     let config = serde_json::from_str::<Config>(&fs::read_to_string("config.json").with_context(|| "Could not find config.json.")?)?;
 
 
-    let obs_client = Client::connect(config.obs_websocket_ip, config.obs_websocket_port).await?;
+    let obs_client = obws::Client::connect(config.obs_websocket_ip, config.obs_websocket_port).await?;
     obs_client.login(config.obs_websocket_password).await?;
 
 
@@ -64,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
 
 
     let (pubsub_connection, _) = tokio_tungstenite::connect_async(twitch_api2::TWITCH_PUBSUB_URL.clone()).await?;
-    let pubsub_connection = Arc::new(Mutex::new(pubsub_connection));
+    let pubsub_connection = Arc::new(tokio::sync::Mutex::new(pubsub_connection));
     pubsub_connection.lock().await.send(redemptions_listen_command.into()).await?;
 
     println!("Client running...");
@@ -126,6 +124,7 @@ async fn main() -> anyhow::Result<()> {
             response => println!("Got web socket response: {:?}", response)
         }
     }
+
 
     ping_thread.await?;
 
