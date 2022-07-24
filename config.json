@@ -1,4 +1,5 @@
 {
+    "enable_backtrace": true,
     "twitch_token": "",
     "twitch_channel": "",
     "obs_websocket_ip": "",
